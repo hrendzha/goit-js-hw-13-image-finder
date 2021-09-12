@@ -2,14 +2,15 @@
     <li class='gallery__item'>
         <div class='photo-card'>
             <div class='photo-card__img-thumb'>
-                <img
-                    class='photo-card__img'
-                    src='{{webformatURL}}'
-                    alt='{{tags}}'
-                    data-source='{{largeImageURL}}'
-                />
+                <a href='{{largeImageURL}}'>
+                    <img
+                        class='photo-card__img'
+                        src='{{webformatURL}}'
+                        alt='{{tags}}'
+                        data-source='{{largeImageURL}}'
+                    />
+                </a>
             </div>
-
             <div class='photo-card__stats'>
                 <p class='photo-card__stats-item'>
                     <i class='photo-card__stats-icon material-icons'>thumb_up</i>

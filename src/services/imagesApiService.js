@@ -28,17 +28,12 @@ export default class ImagesApiService {
                 throw new Error('Error fetching data');
             })
             .then(data => {
-                this.defineTotalPages(data.total);
-
-                if (this.page > this.totalPages) {
-                    throw new Error(`We're sorry, there are no more posts to load`);
-                }
-
+                this.determineIfThisIsLastPage(data.total);
                 this.incrementPage();
 
                 return data;
             })
-            .catch(error => console.log(error));
+            .catch(error => console.log('error'));
     }
 
     incrementPage() {
@@ -59,5 +54,16 @@ export default class ImagesApiService {
 
     defineTotalPages(totalImages) {
         this.totalPages = Math.ceil(totalImages / this.perPage);
+    }
+
+    determineIfThisIsLastPage(totalImages) {
+        this.defineTotalPages(totalImages);
+
+        if (this.page > this.totalPages) {
+            this.isLastPage = true;
+            return;
+        }
+
+        this.isLastPage = false;
     }
 }

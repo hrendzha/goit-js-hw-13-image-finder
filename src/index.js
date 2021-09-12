@@ -1,18 +1,21 @@
 import 'material-icons';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 import './sass/main.scss';
 import refs from './js/refs';
 import ImagesApiService from './services/imagesApiService';
 import LoadMoreBtn from './js/components/load-more-btn';
 import galleryItemsMrk from './templates/gallery-item.hbs';
 import { notification } from './js/pnotify';
+import SimpleLightbox from 'simplelightbox';
 
 const imageApiService = new ImagesApiService();
 const loadMoreBtn = new LoadMoreBtn({
     selector: '.js-load-more-btn',
     hidden: true,
 });
+const lightbox = new SimpleLightbox('.js-gallery a');
 
-let numberItemToScroll = imageApiService.perPage;
+let numberItemToScroll = 0;
 
 refs.searchForm.addEventListener('submit', onSearchFormSubmit);
 loadMoreBtn.refs.btn.addEventListener('click', onLoadMoreBtnClick);
@@ -31,8 +34,9 @@ function onSearchFormSubmit(e) {
     imageApiService.query = searchQuery;
     loadMoreBtn.hide();
     clearGalleryMrk();
+    numberItemToScroll = imageApiService.perPage;
 
-    imageApiService.fetchImages().then(({ hits }) => {
+    imageApiService.fetchImages().then(({ hits, totalHits }) => {
         if (hits.length === 0) {
             notification(
                 'error',
@@ -41,8 +45,9 @@ function onSearchFormSubmit(e) {
             return;
         }
 
-        console.log(imageApiService.totalPages);
+        notification('success', `Hooray! We found ${totalHits} images.`);
         appendPhotoCardsMarkup(hits);
+        lightbox.refresh();
         loadMoreBtn.show();
     });
 }
@@ -57,18 +62,20 @@ function clearGalleryMrk() {
 
 function onLoadMoreBtnClick() {
     loadMoreBtn.disable();
-    console.log(
-        imageApiService.fetchImages().then(() => {
-            loadMoreBtn.enable();
-        }),
-    );
-    // imageApiService.fetchImages().then(({ hits }) => {
-    //     console.log(imageApiService.totalPages);
 
-    //     appendPhotoCardsMarkup(hits);
-    //     loadMoreBtn.enable();
-    //     scrollToNewImages();
-    // });
+    imageApiService.fetchImages().then(({ hits }) => {
+        if (imageApiService.isLastPage) {
+            notification('info', `We're sorry, there are no more posts to load`);
+            loadMoreBtn.hide();
+            loadMoreBtn.enable();
+            return;
+        }
+
+        appendPhotoCardsMarkup(hits);
+        lightbox.refresh();
+        loadMoreBtn.enable();
+        scrollToNewImages();
+    });
 }
 
 function scrollToNewImages() {
