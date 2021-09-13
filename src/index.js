@@ -20,36 +20,35 @@ let numberItemToScroll = 0;
 refs.searchForm.addEventListener('submit', onSearchFormSubmit);
 loadMoreBtn.refs.btn.addEventListener('click', onLoadMoreBtnClick);
 
-function onSearchFormSubmit(e) {
+async function onSearchFormSubmit(e) {
     e.preventDefault();
 
     const searchQuery = e.currentTarget.elements.query.value.trim();
-
     if (searchQuery === '') {
         notification('error', 'Enter something for query');
         return;
     }
 
-    imageApiService.resetPage();
     imageApiService.query = searchQuery;
+    imageApiService.resetPage();
     loadMoreBtn.hide();
     clearGalleryMrk();
     numberItemToScroll = imageApiService.perPage;
 
-    imageApiService.fetchImages().then(({ hits, totalHits }) => {
-        if (hits.length === 0) {
-            notification(
-                'error',
-                'Sorry, there are no images matching your search query. Please try again.',
-            );
-            return;
-        }
+    const { hits, totalHits } = await imageApiService.fetchImages();
 
-        notification('success', `Hooray! We found ${totalHits} images.`);
-        appendPhotoCardsMarkup(hits);
-        lightbox.refresh();
-        loadMoreBtn.show();
-    });
+    if (imageApiService.isLastPage) {
+        notification(
+            'error',
+            'Sorry, there are no images matching your search query. Please try again.',
+        );
+        return;
+    }
+
+    appendPhotoCardsMarkup(hits);
+    lightbox.refresh();
+    loadMoreBtn.show();
+    notification('success', `Hooray! We found ${totalHits} images.`);
 }
 
 function appendPhotoCardsMarkup(data) {

@@ -1,4 +1,4 @@
-const ENDPOINT = 'https://pixabay.com/api/';
+const BASE_URL = 'https://pixabay.com/api/';
 
 export default class ImagesApiService {
     constructor() {
@@ -9,7 +9,7 @@ export default class ImagesApiService {
         this.isLastPage = false;
     }
 
-    fetchImages() {
+    async fetchImages() {
         const searchParams = new URLSearchParams({
             key: '23262939-6c0fd5a3da3fb9e3fdc7add54',
             q: this.searchQuery,
@@ -18,22 +18,14 @@ export default class ImagesApiService {
             page: this.page,
             per_page: this.perPage,
         });
-        const URL = `${ENDPOINT}?${searchParams}`;
+        const url = `${BASE_URL}?${searchParams}`;
 
-        return fetch(URL)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Error fetching data');
-            })
-            .then(data => {
-                this.determineIfThisIsLastPage(data.total);
-                this.incrementPage();
+        const response = await fetch(url);
+        const data = await response.json();
+        this.determineIfThisIsLastPage(data.total);
+        this.incrementPage();
 
-                return data;
-            })
-            .catch(error => console.log('error'));
+        return data;
     }
 
     incrementPage() {
