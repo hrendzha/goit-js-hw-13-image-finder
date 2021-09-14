@@ -7,6 +7,8 @@ import LoadMoreBtn from './js/components/load-more-btn';
 import galleryItemsMrk from './templates/gallery-item.hbs';
 import { notification } from './js/pnotify';
 import SimpleLightbox from 'simplelightbox';
+import clearMrkInside from './js/clearMrkInside';
+import ScrollToNewImages from './js/scrollToNewImages';
 
 const imageApiService = new ImagesApiService();
 const loadMoreBtn = new LoadMoreBtn({
@@ -14,8 +16,10 @@ const loadMoreBtn = new LoadMoreBtn({
     hidden: true,
 });
 const lightbox = new SimpleLightbox('.js-gallery a');
-
-let numberItemToScroll = 0;
+const scrollToNewImages = new ScrollToNewImages({
+    selector: '.js-gallery .gallery__item',
+    imagesPerPage: imageApiService.perPage,
+});
 
 refs.searchForm.addEventListener('submit', onSearchFormSubmit);
 loadMoreBtn.refs.btn.addEventListener('click', onLoadMoreBtnClick);
@@ -32,37 +36,34 @@ async function onSearchFormSubmit(e) {
     imageApiService.query = searchQuery;
     imageApiService.resetPage();
     loadMoreBtn.hide();
-    clearGalleryMrk();
-    numberItemToScroll = imageApiService.perPage;
+    clearMrkInside(refs.gallery);
+    scrollToNewImages.resetNumberItemToScroll();
 
-    const { hits, totalHits } = await imageApiService.fetchImages();
+    try {
+        const { hits, totalHits } = await imageApiService.fetchImages();
 
-    if (imageApiService.isLastPage) {
-        notification(
-            'error',
-            'Sorry, there are no images matching your search query. Please try again.',
-        );
-        return;
+        if (imageApiService.isLastPage) {
+            notification(
+                'error',
+                'Sorry, there are no images matching your search query. Please try again.',
+            );
+            return;
+        }
+
+        updateUIAndRefreshLightbox(hits);
+        loadMoreBtn.show();
+        notification('success', `Hooray! We found ${totalHits} images.`);
+    } catch (error) {
+        errorNotify(error.message);
     }
-
-    appendPhotoCardsMarkup(hits);
-    lightbox.refresh();
-    loadMoreBtn.show();
-    notification('success', `Hooray! We found ${totalHits} images.`);
 }
 
-function appendPhotoCardsMarkup(data) {
-    refs.gallery.insertAdjacentHTML('beforeend', galleryItemsMrk(data));
-}
-
-function clearGalleryMrk() {
-    refs.gallery.innerHTML = '';
-}
-
-function onLoadMoreBtnClick() {
+async function onLoadMoreBtnClick() {
     loadMoreBtn.disable();
 
-    imageApiService.fetchImages().then(({ hits }) => {
+    try {
+        const { hits } = await imageApiService.fetchImages();
+
         if (imageApiService.isLastPage) {
             notification('info', `We're sorry, there are no more posts to load`);
             loadMoreBtn.hide();
@@ -70,20 +71,23 @@ function onLoadMoreBtnClick() {
             return;
         }
 
-        appendPhotoCardsMarkup(hits);
-        lightbox.refresh();
+        updateUIAndRefreshLightbox(hits);
         loadMoreBtn.enable();
-        scrollToNewImages();
-    });
+        scrollToNewImages.scroll();
+    } catch (error) {
+        errorNotify(error.message);
+    }
 }
 
-function scrollToNewImages() {
-    const galleryItems = refs.gallery.querySelectorAll('.gallery__item');
+function appendPhotoCardsMarkup(data) {
+    refs.gallery.insertAdjacentHTML('beforeend', galleryItemsMrk(data));
+}
 
-    galleryItems[numberItemToScroll].scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-    });
+function updateUIAndRefreshLightbox(data) {
+    appendPhotoCardsMarkup(data);
+    lightbox.refresh();
+}
 
-    numberItemToScroll += imageApiService.perPage;
+function errorNotify(message) {
+    notification('error', `Something went wrong (${message}) please try again later`);
 }
