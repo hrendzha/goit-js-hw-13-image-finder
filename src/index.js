@@ -3,18 +3,21 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 import './sass/main.scss';
 import refs from './js/refs';
 import ImagesApiService from './services/imagesApiService';
-import LoadMoreBtn from './js/components/load-more-btn';
+import LoadMoreBtn from './js/components/loadMoreBtn';
 import galleryItemsMrk from './templates/gallery-item.hbs';
 import { notification } from './js/pnotify';
 import SimpleLightbox from 'simplelightbox';
 import clearMrkInside from './js/clearMrkInside';
 import ScrollToNewImages from './js/scrollToNewImages';
+import ScrollToTopBtn from './js/components/scrollToTopBtn';
+import throttle from 'lodash.throttle';
 
 const imageApiService = new ImagesApiService();
 const loadMoreBtn = new LoadMoreBtn({
     selector: '.js-load-more-btn',
     hidden: true,
 });
+const scrollToTopBtn = new ScrollToTopBtn('.scrollToTopBtn');
 const lightbox = new SimpleLightbox('.js-gallery a');
 const scrollToNewImages = new ScrollToNewImages({
     selector: '.js-gallery .gallery__item',
@@ -23,6 +26,8 @@ const scrollToNewImages = new ScrollToNewImages({
 
 refs.searchForm.addEventListener('submit', onSearchFormSubmit);
 loadMoreBtn.refs.btn.addEventListener('click', onLoadMoreBtnClick);
+document.addEventListener('scroll', throttle(scrollToTopBtn.onScroll.bind(scrollToTopBtn), 250));
+refs.scrollToTopBtn.addEventListener('click', scrollToTopBtn.onScrollToTopBtnClick);
 
 async function onSearchFormSubmit(e) {
     e.preventDefault();
